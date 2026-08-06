@@ -83,6 +83,15 @@ Use these three meta-tools first in any session:
 8. `compile_blueprint` → bake changes; watch for downstream errors
 9. `save_assets` → persist
 
+### Setting collision on StaticMeshComponents
+1. `find_actors` with name filter → get target actors
+2. For each actor, `get_properties` → `staticMeshComponent` to get the component refPath
+3. `get_properties` on the component → check `bUseDefaultCollision`
+4. If `bUseDefaultCollision` is `true`, set it to `false` FIRST: `set_properties` with `{"bUseDefaultCollision":false}`
+5. THEN set collision: `set_properties` with `{"BodyInstance":{"collisionEnabled":"NoCollision"}}`
+6. For Actor-type trees (not StaticMeshActor), use `get_components` to find Foliage/Trunk components, skip DefaultSceneRoot/BillboardComponent_0
+7. Use `ProgrammaticToolset.execute_tool_script` to batch across many actors
+
 ### Diagnosing an anim-BP compile error
 1. Read the editor log for the error message
 2. `read_graph_dsl` on the anim BP's `EventGraph` → see what variables it reads
@@ -103,6 +112,9 @@ Use these three meta-tools first in any session:
 8. Bounds reveal scale — compare `get_bounds` on old vs new mesh for scale ratio
 9. Build commands require absolute `.uproject` path; editor build blocked while editor runs
 10. Editor must be open — all tools run against the currently running editor
+11. **`bUseDefaultCollision` overrides instance collision** — StaticMeshComponents default to `bUseDefaultCollision=true`, inheriting collision from the mesh asset. Setting `BodyInstance.collisionEnabled` does NOTHING until you first set `bUseDefaultCollision=false`. This is the #1 reason collision changes appear to succeed (returns `true`) but don't take effect
+12. **Actor-type trees vs StaticMeshActor trees** — trees can be plain Actors (with Foliage/Trunk components) or StaticMeshActors (with StaticMeshComponent). Use `get_class` to distinguish, then apply collision to the right component types. Skip `DefaultSceneRoot` and `BillboardComponent_0` — they have no `BodyInstance`
+13. **`find_actors` requires `collision_channels: []`** — even an empty array is mandatory in the input schema
 
 ## Searching the Reference
 
